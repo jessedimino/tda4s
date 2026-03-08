@@ -18,7 +18,7 @@ jobs:
           distribution: 'temurin'
           cache: 'sbt'
           java-version: 21
-      - uses: sbt/setup-sbt
+      - uses: sbt/setup-sbt@v1
       - name: Compile and publish docs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
