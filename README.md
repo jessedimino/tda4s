@@ -1,3 +1,7 @@
+[![test](https://github.com/appliedtopology/tda4s/actions/workflows/test.yml/badge.svg?branch=scala)](https://github.com/appliedtopology/tda4s/actions)
+[![lint](https://github.com/appliedtopology/tda4s/actions/workflows/lint.yml/badge.svg?branch=scala)](https://github.com/appliedtopology/tda4s/actions)
+[![docs](https://github.com/appliedtopology/tda4s/actions/workflows/docs.yml/badge.svg?branch=scala)](https://github.com/appliedtopology/tda4s/actions)
+
 # tda4s - TDA For Scala
 
 This project is intended to be an accessible development platform for new and 
