@@ -6,10 +6,10 @@ import scala.collection.Set
 
 object PersistentHomology:
   def persistentHomology(
-      simplexstream: Iterator[Set[Int]],
+      simplexStream: Iterator[Set[Int]],
       filtrationValues: PartialFunction[Set[Int], Double]
   ): Seq[(Int, Double, Double)] =
-    NaivePersistentHomology(simplexstream, filtrationValues).barcode
+    NaivePersistentHomology(simplexStream, filtrationValues).barcode
 end PersistentHomology
 
 class NaivePersistentHomology(simplexstream: Iterator[Set[Int]], filtrationValues: PartialFunction[Set[Int], Double]):
@@ -33,52 +33,50 @@ class NaivePersistentHomology(simplexstream: Iterator[Set[Int]], filtrationValue
       cycleBirths = state.cycleBirths + (simplex -> birth)
     )
   } else {
-    val dsimplex = Chain.boundary(simplex)(streamOrdering)
-    val dimension = simplex.size - 1
-    assert(dsimplex.entries.size == simplex.size)
-    val (dsModB, reductionB) = Chain.reduceBy(dsimplex, state.boundaryBasis)
-    if (dsModB.isZero) {
+    val simplexBoundary = Chain.boundary(simplex)(streamOrdering)
+    val (boundaryModBoundaries, boundaryReductionLog) = Chain.reduceBy(simplexBoundary, state.boundaryBasis)
+    if (boundaryModBoundaries.isZero) {
       // then ∂s is already a boundary, say the boundary of z
       // hence ∂(s-z) = ∂s - ∂z = 0
       // so s-z is a new cycle
-      val cycle = // look through reduction log, read off coboundaries and scale and add
-        reductionB
+      val cycle = // look through reduction reductionHistory, read off coboundaries and scalingFactor and add
+        boundaryReductionLog
           .foldLeft(Chain.from(simplex)(streamOrdering)) { case (chain, (spx, coeff)) =>
             chain.scaleAdd(-coeff, state.coboundaryLookup(spx))
           }
 
-      val (cyclemodZ, _) = Chain.reduceBy(cycle, state.cycleBasis)
-      val cycleBirth = filtrationValue(simplex)
+      val (cycleModCycles, _) = Chain.reduceBy(cycle, state.cycleBasis)
+      val birthTime = filtrationValue(simplex)
 
-      state = cyclemodZ.leading match {
+      state = cycleModCycles.leading match {
         case Some((spx, _)) =>
           state.copy(
-            cycleBasis = state.cycleBasis + (spx -> cyclemodZ),
-            cycleBirths = state.cycleBirths + (spx -> cycleBirth)
+            cycleBasis = state.cycleBasis + (spx -> cycleModCycles),
+            cycleBirths = state.cycleBirths + (spx -> birthTime)
           )
         case None: Option[(Set[Int], Double)] => state
       }
     } else {
       // since ∂s is not a boundary already, it has to be a cycle
       // reducing mod cycles will tell us which cycle just became a boundary with the addition of simplex
-      // val (dsModZ, reductionZ) = Chain.reduceBy(dsModB, state.cycleBasis)
+      // val (dsModZ, reductionZ) = Chain.reduceBy(boundaryModBoundaries, state.cycleBasis)
       // assert(dsModZ.isZero)
-      val dyingChainHead = dsModB.entries.keys
+      val dyingCycleLeadingSimplex = boundaryModBoundaries.simplexCoefficients.keys
         .filter(k => state.cycleBasis.contains(k))
         .max(using streamOrdering)
-      val coboundary = // look through reduction log, read off coboundaries and scale and add
-        reductionB
+      val updatedCoboundary = // look through reduction reductionHistory, read off coboundaries and scalingFactor and add
+        boundaryReductionLog
           .foldLeft(Chain.from(simplex)(streamOrdering)) { case (chain, (spx, coeff)) =>
             chain.scaleAdd(-coeff, state.coboundaryLookup(spx))
           }
-      if (math.abs(filtrationValue(simplex) - state.cycleBirths(dyingChainHead)) > 1e-15)
-        barcodes.append((dyingChainHead.size - 1, state.cycleBirths(dyingChainHead), filtrationValue(simplex)))
-      assert(simplex.size == dyingChainHead.size + 1)
+      if (math.abs(filtrationValue(simplex) - state.cycleBirths(dyingCycleLeadingSimplex)) > 1e-15)
+        barcodes.append((dyingCycleLeadingSimplex.size - 1, state.cycleBirths(dyingCycleLeadingSimplex), filtrationValue(simplex)))
+      assert(simplex.size == dyingCycleLeadingSimplex.size + 1)
       state = state.copy(
-        cycleBasis = state.cycleBasis - dyingChainHead,
-        boundaryBasis = state.boundaryBasis + (dsModB.leading.get._1 -> dsModB),
-        cycleBirths = state.cycleBirths - dyingChainHead,
-        coboundaryLookup = state.coboundaryLookup + (dyingChainHead -> coboundary)
+        cycleBasis = state.cycleBasis - dyingCycleLeadingSimplex,
+        boundaryBasis = state.boundaryBasis + (boundaryModBoundaries.leading.get._1 -> boundaryModBoundaries),
+        cycleBirths = state.cycleBirths - dyingCycleLeadingSimplex,
+        coboundaryLookup = state.coboundaryLookup + (dyingCycleLeadingSimplex -> updatedCoboundary)
       )
     }
   }
