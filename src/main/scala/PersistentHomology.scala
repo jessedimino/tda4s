@@ -66,16 +66,19 @@ class NaivePersistentHomology(simplexstream: Iterator[Set[Int]], filtrationValue
       val dyingChainHead = dsModB.entries.keys
         .filter(k => state.cycleBasis.contains(k))
         .max(using streamOrdering)
-      barcodes.append((dyingChainHead.size - 1, state.cycleBirths(dyingChainHead), filtrationValue(simplex)))
+      val coboundary = // look through reduction log, read off coboundaries and scale and add
+        reductionB
+          .foldLeft(Chain.from(simplex)(streamOrdering)) { case (chain, (spx, coeff)) =>
+            chain.scaleAdd(-coeff, state.coboundaryLookup(spx))
+          }
+      if (math.abs(filtrationValue(simplex) - state.cycleBirths(dyingChainHead)) > 1e-15)
+        barcodes.append((dyingChainHead.size - 1, state.cycleBirths(dyingChainHead), filtrationValue(simplex)))
       assert(simplex.size == dyingChainHead.size + 1)
       state = state.copy(
         cycleBasis = state.cycleBasis - dyingChainHead,
         boundaryBasis = state.boundaryBasis + (dsModB.leading.get._1 -> dsModB),
         cycleBirths = state.cycleBirths - dyingChainHead,
-        coboundaryLookup = state.coboundaryLookup.updatedWith(dyingChainHead) {
-          case Some(value) => Some(value.scaleAdd(1.0, Chain.from(simplex)(streamOrdering)))
-          case None        => Some(Chain.from(simplex)(streamOrdering))
-        }
+        coboundaryLookup = state.coboundaryLookup + (dyingChainHead -> coboundary)
       )
     }
   }

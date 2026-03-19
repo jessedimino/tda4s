@@ -62,13 +62,17 @@ class PersistentHomologySpec extends AnyFlatSpec:
 
 class VietorisRipsValidation extends AnyFlatSpec with Checkers with Matchers:
   "the circle" should "have barcode" in {
-    val aa = (0 until 10).map(_ / 20.0)
+    val D = 3
+    val N = 10
+    val aa = (0 until N).map(_ / N.toDouble)
     val xy = aa.map(a => Array(cos(2 * 3.14 * a), sin(2 * 3.14 * a))).toSeq
     val metricSpace = VectorMetricSpace("euclidean", xy)
     val vrStream = NaiveVietorisRips(metricSpace)
-    val barcode = PersistentHomology.persistentHomology(vrStream.simplices(), vrStream.filtrationValues)
-    (barcode
+    val barcode = PersistentHomology.persistentHomology(vrStream.simplices().filter(_.size <= D + 1), vrStream.filtrationValues)
+    val salientBars = barcode.filter((bar: (Int, Double, Double)) => bar._1 < D)
+    val numBars = salientBars
       .map((bar: (Int, Double, Double)) => bar._3 - bar._2)
-      .filter(_.isInfinite)
-      .size) == 2
+      .filter(_ > 1.0)
+      .size
+    numBars == 2
   }

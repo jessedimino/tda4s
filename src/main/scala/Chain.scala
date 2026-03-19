@@ -39,8 +39,7 @@ object Chain:
     var retchain: Chain = chain
     var retlog: Map[Set[Int], Double] = Map.empty
     var done: Boolean = false
-    while (!done) {
-      done = true
+    while (retchain.entries.exists(k => basis.contains(k._1)))
       for ((basisSimplex, basisChain) <- basis) {
         var retTerm = retchain.entries.get(basisSimplex)
         retTerm match {
@@ -49,9 +48,7 @@ object Chain:
             val coeff = chainCoeff / basisChain.entries(basisSimplex)
             retchain = retchain.scaleAdd(-coeff, basisChain)
             retlog = retlog + ((basisSimplex, coeff))
-            done = false
         }
       }
-    }
     (retchain, retlog)
   }
