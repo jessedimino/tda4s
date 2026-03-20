@@ -7,11 +7,9 @@ trait VietorisRips(val metricSpace: MetricSpace[Int]):
     case spx if spx.size == 0 => Double.NegativeInfinity
     case spx if spx.size == 1 => 0.0
     case spx =>
-      (for {
-        x <- spx.toSeq
-        y <- spx.toSeq
-        if x > y
-      } yield metricSpace.distance(x, y)).max
+      spx.toSeq.combinations(2)
+        .map { case Seq(x, y) => metricSpace.distance(x, y) }
+        .max
   }
   def simplicesInDimension(dimension: Int): Iterator[Set[Int]]
   def simplices(): Iterator[Set[Int]] = (0 until metricSpace.elements.size).iterator.flatMap(simplicesInDimension)
