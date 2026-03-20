@@ -1,7 +1,6 @@
 package org.appliedtopology.tda4s
 
 import Ordering.Implicits.*
-import scala.Predef.->
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedMap
 import scala.collection.{Map, Set}
@@ -34,24 +33,17 @@ object Chain:
     Chain(entries)
   }
 
-  // @tailrec
+  @tailrec
   def reduceBy(
       chain: Chain,
       basis: Map[Set[Int], Chain],
       reductionHistory: Map[Set[Int], Double] = Map.empty
-  ): (Chain, Map[Set[Int], Double]) = {
-    var reducedChain: Chain = chain
-    var reductionLog: Map[Set[Int], Double] = Map.empty
-    while (reducedChain.simplexCoefficients.exists(k => basis.contains(k._1)))
-      for ((pivotSimplex, pivotChain) <- basis) {
-        var currentCoefficient = reducedChain.simplexCoefficients.get(pivotSimplex)
-        currentCoefficient match {
-          case None => ()
-          case Some(chainCoeff) =>
-            val coeff = chainCoeff / pivotChain.simplexCoefficients(pivotSimplex)
-            reducedChain = reducedChain.scaleAdd(-coeff, pivotChain)
-            reductionLog = reductionLog + ((pivotSimplex, coeff))
-        }
-      }
-    (reducedChain, reductionLog)
-  }
+  ): (Chain, Map[Set[Int], Double]) =
+    chain.simplexCoefficients.find(k => basis.contains(k._1)) match {
+      case None => (chain, reductionHistory)
+      case Some(value) =>
+        val (simplex, chainCoeff) = value
+        val pivotChain = basis(simplex)
+        val coeff = chainCoeff / pivotChain.simplexCoefficients(simplex)
+        reduceBy(chain.scaleAdd(-coeff, pivotChain), basis, reductionHistory + (simplex -> coeff))
+    }
