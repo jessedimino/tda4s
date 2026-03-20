@@ -2,7 +2,16 @@ package org.appliedtopology.tda4s
 
 import language.experimental.modularity
 
+
+
+
+
 trait Field:
+/** 
+  * The Field trait provides the backbone for the mathematical field structure. Fields contain two binary operations, addition and multiplication, identities for the corresponding operations, and 
+  * inverses for every element except the additive identity. The field trait ensures that we have access to these operations, and we provide a means to overload the usual symbols to return addition and 
+  * multiplication with respect to the field structure
+  */
   type Self
   def apply(x: Int): Self
   def zero: Self
@@ -43,7 +52,15 @@ object Field:
     def mul(x: Self, y: Self): Self = x * y
     def div(x: Self, y: Self): Self = x / y
 
+
+
   case class FiniteField(p: Int) extends Field:
+    /**
+    * We implement the finite field as a case class. In order to satisfy the field structure the field characteristic $p$ must be a prime number to ensure that multiplicative inverses exist for all elements
+    * except the additive identity. 
+    * @param p
+    *   The field characteristic, all operations in the field are performed modulo p 
+    */
     require(p > 1 && BigInt(p).isProbablePrime(10), "p must be a prime number.")
     private val inverseTable: Array[Int] = Array.tabulate(p) { i =>
       if (i == 0) 0
