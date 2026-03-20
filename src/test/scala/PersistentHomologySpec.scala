@@ -74,5 +74,5 @@ class VietorisRipsValidation extends AnyFlatSpec with Checkers with Matchers:
       .map((bar: (Int, Double, Double)) => bar._3 - bar._2)
       .filter(_ > 1.0)
       .size
-    numBars == 2
+    numBars shouldEqual 2
   }
