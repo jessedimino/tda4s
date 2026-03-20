@@ -4,33 +4,34 @@ import Ordering.Implicits.*
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedMap
 
-//base implementation of chain that's a sorted map of simplexes to coefficients
+
 case class Chain(entries: SortedMap[Set[Int], Double]):
-  //implementation of scaling and addition for chains
+/**
+* Chains are objects that carry information about how simplexes are connected. They are linear combinations of simplexes with coefficients drawn over a field. We implement them are a sorted map from simplexes
+* to the corresponding coefficient. Sorting should occur by filtration value in the simplex stream.
+*/
   def scaleAdd(scale: Double, other: Chain): Chain =
-    //iterate over all the (s,v) pairs from left to right
+  /**
+  * Implementation for some chain-based operation. I need to spend a bit more time studying this to better understand what it's doing. Possibly the syntax could be improved.
+  */
     Chain(other.entries.foldLeft(entries) { case (result, (s, v)) =>
-    //return s or 0 to avoid an error
       entries.getOrElse(s, 0.0) match {
-        //for the initial value v0
         case v0: Double =>
-          //compute v1 as this
           v0 + scale * v match {
-            //remove s if v1 is too small
             case v1 if math.abs(v1) < 1e-10 => result.removed(s)
-            //update (s,v0) to (s,v1) otherwise
             case v1                         => result.updated(s, v1)
           }
       }
     })
-  //whole process gets wrapped in a chain
 def isZero: Boolean = entries.values.forall(math.abs(_) < 1e-10)
 
 //chain object
 object Chain:
-  //chains have boundary maps
-  //boundary maps represent a k-dimensional chain as a linear combination of its faces which are
-  //k-1 simplexes
+  /**
+  * Chains are equipped with boundary operators which express a k-simplex as a k-1 dimensional chain, representing the faces of the simplex.
+  * These can be linked together to form a chain complex
+  */
+
   def boundary(simplex: Set[Int])(ordering: Ordering[Set[Int]]): Chain =
     Chain(
       SortedMap.from(
@@ -40,10 +41,11 @@ object Chain:
       )(using ordering)
     )
 
-  //use tail recursion for computational efficiency
   @tailrec
-  //implementation for reducing chains by a basis
   def reduceBy(chain: Chain, basis: Map[Set[Int], Chain], log: Map[Set[Int], Double] = Map.empty): (Chain, Map[Set[Int], Double]) =
+  /**
+  * Implementation for reducing chains by a basis using tail recursion to improve efficiency. I'm still a bit shaky on the details of this
+  */
     (for {
       (leadingSimplex, leadingValue) <- chain.entries.headOption
       basisChain <- basis.get(leadingSimplex)
