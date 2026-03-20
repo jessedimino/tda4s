@@ -4,11 +4,23 @@ import collection.mutable
 import scala.collection.immutable.SortedMap
 
 object PersistentHomology:
+/**
+* The PeristentHomology object provides a way for us to access the barcode from the persistent homology computation.
+*/
   def persistentHomology(simplexstream: Seq[Set[Int]], filtrationValues: Map[Set[Int], Double]): Seq[(Int, Double, Double)] =
     NaivePersistentHomology(simplexstream, filtrationValues).barcode
 end PersistentHomology
 
 class NaivePersistentHomology(simplexstream: Seq[Set[Int]], filtrationValues: Map[Set[Int], Double]):
+/**
+* A naive implementation of the Persistent Homoogy Algorithm in the sense that no optimizations are applied, and it works as described in the textbook. It utilizes a form of row reduction
+* to find the pivots of the boundary matrix, which correspond to cycles in the underlying topology. 
+* @param simplexstream
+*   Quite literally just the stream of simplexes for the algorithm to utilize in the form of a sequence
+* @param filtrationValues
+*   A map from the given simplex to its corresponding birth time as defined by the filtration
+* 
+*/
   case class State(
       cycleBasis: Map[Set[Int], Chain],
       boundaryBasis: Map[Set[Int], Chain],
