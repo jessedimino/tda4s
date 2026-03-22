@@ -57,11 +57,13 @@ class PersistentHomologySpec extends AnyFlatSpec:
       (1, 9.0, 12.0),
       (2, 13.0, Double.PositiveInfinity)
     )
+    given DoubleIsField(1e-15)
     PersistentHomology.persistentHomology(simplexstream, filtrationValues).sorted shouldEqual expectedBarcode.sorted
   }
 
 class VietorisRipsValidation extends AnyFlatSpec with Checkers with Matchers:
   "the circle" should "have barcode" in {
+    given FiniteFieldIsField(17)
     val D = 3
     val N = 10
     val aa = (0 until N).map(_ / N.toDouble)
