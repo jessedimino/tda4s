@@ -6,11 +6,39 @@ import scala.collection.immutable.SortedMap
 import scala.collection.{Map, Set}
 
 class Chain[T](using val field: Field[T])(val simplexCoefficients: SortedMap[Set[Int], field.F]):
+  /**
+  * Chains carry information about how simplexes are connected. They are formal linear combinations of simplexes
+  * with coefficients drawn over a field. Our implementation is parameterized by a type T which is then typecasted to the
+  * Field type. 
+  * 
+  * @tparam T
+  *  The underlying type for the field coefficients. Should be double for the reals and int for a finite field
+  * 
+  * @param simplexCoefficients
+  *  Chains are implemented as conversions of a SortedMap from 
+  *  the simplexto the corresponding coefficient. Sorting should occur by filtration value in the simplex stream.
+  *
+  */
   import field.*
   def scale(scalingFactor: F): Chain[T] = Chain(simplexCoefficients.collect[Set[Int], F] { case (k, v) =>
     (k, v * scalingFactor)
   }(using simplexCoefficients.ordering))
+    /**
+    * Scales all the coefficients in the chain by a constant factor
+    *
+    * @param scalingFactor
+    *  the field element which is used to multiply each coefficient 
+    */
   def scaleAdd(scalingFactor: F, other: Chain[T]): Chain[T] =
+    /**
+    * Constructs a new chain by scaling the original (self) chain and adding it to the other chain
+    * 
+    * @param scalingFactor
+    *  the field element which is used to multiply each coefficient 
+    *
+    * @param other
+    *  the other chain used for addition coefficient-wise
+    */
     Chain(other.simplexCoefficients.foldLeft(simplexCoefficients) { case (result, (s, v)) =>
       result.getOrElse(s, zero) match {
         case v0: F =>
@@ -27,9 +55,25 @@ class Chain[T](using val field: Field[T])(val simplexCoefficients: SortedMap[Set
   def leading: Option[(Set[Int], F)] = simplexCoefficients.lastOption
 
 object Chain:
+  /**
+  * Chain object equipped with a from method and boundary maps
+  */
+
   def from[T: Field as field](simplex: Set[Int])(ordering: Ordering[Set[Int]]): Chain[T] = Chain(
     SortedMap((simplex, field.one))(using ordering)
   )
+    /**
+    * The from method allows for the construction of the Chain object from the components
+    * 
+    * @tparam T
+    *  type bound for our field, requires us to have an instantiation of F[T]
+    * 
+    * @param simplex
+    *  We represent our simplexes as Sets of Ints
+    *
+    * @param ordering
+    *  We need a way to define an ordering on simplexes for the persistent homology algorithm to work
+    */
   def boundary[T: Field as field](simplex: Set[Int])(ordering: Ordering[Set[Int]]): Chain[T] = {
     val vertices = simplex.toSeq.sorted
     val faces = vertices.map(i => simplex - i)
