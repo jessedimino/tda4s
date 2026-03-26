@@ -5,18 +5,60 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.Set
 
 object PersistentHomology:
+  /**
+  * Companion object for the NaivePersistentHomology class
+  */
   def persistentHomology[T: Field as field](
       simplexStream: Iterator[Set[Int]],
       filtrationValues: PartialFunction[Set[Int], Double]
   ): Seq[(Int, Double, Double)] =
     NaivePersistentHomology(simplexStream, filtrationValues)(using field).barcode
+    /**
+    * method to run the persistent homology algorithm defined in the NaivePersistentHomology class
+    *
+    * @tparam T
+    *  type parameter for the field, requires we have an instantiation of F[T]
+    *
+    * @param simplexStream
+    *  iterable object of simplexes 
+    *
+    * @param filtrationValues
+    *  partial function that takes a simplex as an input and returns the filtration value as a double
+    */
 end PersistentHomology
 
 class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int]], filtrationValues: PartialFunction[Set[Int], Double]):
+  /**
+  * Class to run the persistent homology algorithm. It is naive in the sense that it is a textbook implementation with no
+  * optimizations applied to it. It utilizes a form of row reduction to find the pivots of the boundary matrix,
+  * which correspond to cycles in the underlying topology. 
+  *
+  * @tparam T
+  *  type parameter for the field, requires we have an instantiation of F[T]
+  *
+  * @param simplexStream
+  *  iterable object of simplexes 
+  *
+  * @param filtrationValues
+  *  partial function that takes a simplex as an input and returns the filtration value as a double
+  *
+  */
+
   import field._
   def filtrationValue(simplex: Set[Int]): Double =
     filtrationValues.applyOrElse(simplex, _ => Double.PositiveInfinity)
+    /**
+    * Method for the filtration value of a simplex. Returns either the filtation value specified in filtrationValues or infinity
+    * if it is not defined
+    *
+    * @param simplex
+    *   The simplex used to compute the filtration value
+    */
   def streamOrdering = Ordering.by(filtrationValue).orElseBy(SortedSet.from(_))(Ordering.Implicits.sortedSetOrdering)
+    /**
+    * Method to order the simplexes in the simplex stream. Should occur by the filtration values or the defailt set ordering in
+    * Scala if the filtration isn't defined.
+    */
   case class State(
       cycleBasis: Map[Set[Int], Chain[T]],
       boundaryBasis: Map[Set[Int], Chain[T]],
