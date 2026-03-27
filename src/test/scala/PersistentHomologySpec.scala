@@ -78,3 +78,35 @@ class VietorisRipsValidation extends AnyFlatSpec with Checkers with Matchers:
       .size
     numBars shouldEqual 2
   }
+
+class KleinBottleValidation extends AnyFlatSpec with Checkers with Matchers:
+  "the Klein bottle" should "have different barcodes" in {
+    val topSimplices = Seq(
+      Set(2,6,7), Set(0,6,7), Set(2,5,7), Set(0,5,7), Set(4,5,6), Set(3,5,6),
+      Set(0,4,6), Set(2,3,6), Set(1,4,5), Set(0,3,5), Set(1,2,5), Set(2,3,4),
+      Set(1,3,4), Set(0,2,4), Set(0,1,3), Set(0,1,2))
+    val simplices = topSimplices
+      .toSet
+      .flatMap((s:Set[Int]) => s.subsets())
+      .filter(_.size > 0)
+      .toSeq.sorted.sortBy(_.size)
+    println(simplices)
+    val filtrationValues : PartialFunction[Set[Int], Double] = { case _ => 0.0 }
+    val barcode0 = {
+      given DoubleIsField(1e-15)
+      PersistentHomology.persistentHomology(simplices.iterator, filtrationValues)
+    }
+    val barcode2 = {
+      given FiniteFieldIsField(2)
+      PersistentHomology.persistentHomology(simplices.iterator, filtrationValues)
+    }
+    val barcode3 = {
+      given FiniteFieldIsField(3)
+      PersistentHomology.persistentHomology(simplices.iterator, filtrationValues)
+    }
+    println(barcode0)
+    println(barcode2)
+    println(barcode3)
+    assert(barcode0 == barcode3)
+    assert(barcode0 != barcode2)
+  }

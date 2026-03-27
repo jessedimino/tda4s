@@ -59,6 +59,11 @@ class FF17PropertiesValidation extends AnyPropSpec with ScalaCheckPropertyChecks
   import ff17IsField._
   def field(n: Int): F = F.fromInt(n)
 
+  property("modular field") {
+    isZero(field(17)) should be
+    isZero(field(10) + field(7)) should be
+  }
+
   property("additive identity") {
     forAll { (x: Int) =>
       equiv(field(x) + zero, field(x)) should be
