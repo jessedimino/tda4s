@@ -109,4 +109,7 @@ class KleinBottleValidation extends AnyFlatSpec with Checkers with Matchers:
     println(barcode3)
     assert(barcode0 == barcode3)
     assert(barcode0 != barcode2)
+    assert(barcode0 == List((1,0.0,Double.PositiveInfinity), (0,0.0,Double.PositiveInfinity)))
+    assert(barcode2 == List((2,0.0,Double.PositiveInfinity), (1,0.0,Double.PositiveInfinity), (1,0.0,Double.PositiveInfinity), (0,0.0,Double.PositiveInfinity)))
+    assert(barcode3 == List((1,0.0,Double.PositiveInfinity), (0,0.0,Double.PositiveInfinity)))
   }
