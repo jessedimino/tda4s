@@ -7,8 +7,8 @@ case class Simplex(vertices: SortedSet[Int]):
   def dimension: Int = vertices.size - 1
   def boundary[T: Field as field](ordering: Ordering[Simplex]): Chain[T] = {
     val faces = vertices.toSeq.map(i => this - i)
-    val coefficients : Iterator[field.F] = Iterator.iterate(field.one)(field.neg)
-    val faceCoefficientPairs : Seq[(Simplex, field.F)] = faces.zip(coefficients).toSeq
+    val coefficients: Iterator[field.F] = Iterator.iterate(field.one)(field.neg)
+    val faceCoefficientPairs: Seq[(Simplex, field.F)] = faces.zip(coefficients).toSeq
     Chain.from(using field)(faceCoefficientPairs*)(using ordering)
   }
 
