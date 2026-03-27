@@ -2,9 +2,10 @@ package org.appliedtopology.tda4s
 
 trait Field[T]:
   opaque type F = T
+  def normalize(x: T): T = x
   object F:
     def apply(t: T): F = t
-    def unapply(t: F): Option[T] = Some(t)
+    def unapply(t: F): Option[T] = Some(normalize(t))
     def fromInt(n: Int): F = repAdd(one, n)
 
   def add(x: F, y: F): F
@@ -19,6 +20,7 @@ trait Field[T]:
   def one: F
   def equiv(x: F, y: F): Boolean = x == y
   def isZero(x: F): Boolean = equiv(x, zero)
+  def show(x: F): String = s"F($x)"
   extension (x: F)
     def +(y: F): F = add(x, y)
     def -(y: F): F = sub(x, y)
@@ -27,7 +29,6 @@ trait Field[T]:
     def unary_- : F = neg(x)
     def **(n: Int): F = pow(x, n)
     def *(n: Int): F = repAdd(x, n)
-    def toString: String = s"F($x)"
 
 class DoubleIsField(val eps: Double) extends Field[Double]:
   def add(x: F, y: F): F = (x, y) match { case (F(xx), F(yy)) => F(xx + yy) }
@@ -48,13 +49,21 @@ class FiniteFieldIsField(val p: Int) extends Field[Int]:
     if (i == 0) 0
     else BigInt(i).modInverse(p).toInt
   }
+  override def normalize(x: Int): Int = if (p == 2) x
+  else
+    x match {
+      case xx if xx > (p - 1) / 2 => ((xx + (p - 1) / 2) % p) - (p - 1) / 2
+      case _                      => x
+    }
   def add(x: F, y: F): F = (x, y) match { case (F(xx), F(yy)) => F((xx + yy) % p) }
   def sub(x: F, y: F): F = add(x, neg(y))
   def mul(x: F, y: F): F = (x, y) match { case (F(xx), F(yy)) => F((xx * yy) % p) }
   def div(x: F, y: F): F = mul(x, inv(y))
   def neg(x: F): F = x match { case F(xx) => F(p - xx) }
-  def inv(x: F): F = x match { case F(xx) => F(inverseTable(xx)) }
+  def inv(x: F): F = x match { case F(xx) => F(inverseTable((xx + p) % p)) }
   def pow(x: F, n: Int): F = x match { case F(xx) => F(math.pow(xx.toDouble, n).toInt % p) }
   def repAdd(x: F, n: Int): F = x match { case F(xx) => F((xx * n) % p) }
   def zero: F = F(0)
   def one: F = F(1)
+  override def equiv(x: F, y: F): Boolean = (x, y) match { case (F(xx), F(yy)) => (xx % p) == (yy % p) }
+  override def show(x: F): String = x match { case F(xx) => s"F($xx)" }

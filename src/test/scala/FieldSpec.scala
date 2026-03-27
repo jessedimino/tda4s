@@ -10,7 +10,7 @@ import sun.jvm.hotspot.oops.DoubleField
 
 class DoublePropertiesValidation extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers:
 
-  val doubleIsField = DoubleIsField(1e-15)
+  val doubleIsField: Field[Double] = DoubleIsField(1e-15)
   given Field[Double] = doubleIsField
   import doubleIsField._
   def field(n: Int): F = F.fromInt(n)
@@ -54,7 +54,7 @@ class DoublePropertiesValidation extends AnyPropSpec with ScalaCheckPropertyChec
 
 class FF17PropertiesValidation extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers:
 
-  val ff17IsField = FiniteFieldIsField(17)
+  val ff17IsField: Field[Int] = FiniteFieldIsField(17)
   given Field[Int] = ff17IsField
   import ff17IsField._
   def field(n: Int): F = F.fromInt(n)
