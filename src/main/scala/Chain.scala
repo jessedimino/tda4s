@@ -5,9 +5,9 @@ import scala.annotation.tailrec
 import scala.collection.immutable.SortedMap
 import scala.collection.{Map, Set}
 
-class Chain[T](using val field: Field[T])(val simplexCoefficients: SortedMap[Set[Int], field.F]):
+class Chain[T](using val field: Field[T])(val simplexCoefficients: SortedMap[Simplex, field.F]):
   import field.*
-  def scale(scalingFactor: F): Chain[T] = Chain(simplexCoefficients.collect[Set[Int], F] { case (k, v) =>
+  def scale(scalingFactor: F): Chain[T] = Chain(simplexCoefficients.collect[Simplex, F] { case (k, v) =>
     (k, v * scalingFactor)
   }(using simplexCoefficients.ordering))
   def scaleAdd(scalingFactor: F, other: Chain[T]): Chain[T] =
@@ -24,14 +24,14 @@ class Chain[T](using val field: Field[T])(val simplexCoefficients: SortedMap[Set
       }
     })
   def isZero: Boolean = simplexCoefficients.values.forall(field.isZero(_))
-  def leading: Option[(Set[Int], F)] = simplexCoefficients.lastOption
+  def leading: Option[(Simplex, F)] = simplexCoefficients.lastOption
 
 object Chain:
-  def from[T: Field as field](simplex: Set[Int])(ordering: Ordering[Set[Int]]): Chain[T] = Chain(
+  def from[T: Field as field](simplex: Simplex)(ordering: Ordering[Simplex]): Chain[T] = Chain(
     SortedMap((simplex, field.one))(using ordering)
   )
-  def boundary[T: Field as field](simplex: Set[Int])(ordering: Ordering[Set[Int]]): Chain[T] = {
-    val vertices = simplex.toSeq.sorted
+  def boundary[T: Field as field](simplex: Simplex)(ordering: Ordering[Simplex]): Chain[T] = {
+    val vertices = simplex.vertices.toSeq
     val faces = vertices.map(i => simplex - i)
     val coefficients = Iterator.iterate(field.one)(field.neg)
     val faceCoefficientPairs = faces.zip(coefficients).toSeq
@@ -39,14 +39,14 @@ object Chain:
     Chain(entries)
   }
 
-  def reduce[T: Field as outerField](chain: Chain[T], basis: Map[Set[Int], Chain[T]]): (Chain[T], Map[Set[Int], outerField.F]) =
+  def reduce[T: Field as outerField](chain: Chain[T], basis: Map[Simplex, Chain[T]]): (Chain[T], Map[Simplex, outerField.F]) =
     import outerField._
     @tailrec
     def reduceBy(
         innerChain: Chain[T],
-        basis: Map[Set[Int], Chain[T]],
-        reductionHistory: Map[Set[Int], F]
-    )(using innerField: Field[T]): (Chain[T], Map[Set[Int], F]) = innerChain.field match {
+        basis: Map[Simplex, Chain[T]],
+        reductionHistory: Map[Simplex, F]
+    )(using innerField: Field[T]): (Chain[T], Map[Simplex, F]) = innerChain.field match {
       case outerField =>
         innerChain.simplexCoefficients.find(k => basis.contains(k._1)) match {
           case None => (innerChain, reductionHistory)

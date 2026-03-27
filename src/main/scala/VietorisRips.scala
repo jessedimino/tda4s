@@ -3,20 +3,20 @@ package org.appliedtopology.tda4s
 import scala.collection.Set
 
 trait VietorisRips(val metricSpace: MetricSpace[Int]):
-  def filtrationValues: PartialFunction[Set[Int], Double] = {
-    case spx if spx.isEmpty   => Double.NegativeInfinity
-    case spx if spx.size == 1 => 0.0
+  def filtrationValues: PartialFunction[Simplex, Double] = {
+    case spx if spx.vertices.isEmpty   => Double.NegativeInfinity
+    case spx if spx.dimension == 0 => 0.0
     case spx =>
-      spx.toSeq.combinations(2).map { case Seq(x, y) => metricSpace.distance(x, y) }.max
+      spx.vertices.toSeq.combinations(2).map { case Seq(x, y) => metricSpace.distance(x, y) }.max
   }
-  def simplicesInDimension(dimension: Int): Iterator[Set[Int]]
-  def simplices(): Iterator[Set[Int]] = metricSpace.elements.indices.iterator.flatMap(simplicesInDimension)
+  def simplicesInDimension(dimension: Int): Iterator[Simplex]
+  def simplices(): Iterator[Simplex] = metricSpace.elements.indices.iterator.flatMap(simplicesInDimension)
 
 class NaiveVietorisRips(metricSpace: MetricSpace[Int]) extends VietorisRips(metricSpace):
-  override def simplicesInDimension(dimension: Int): Iterator[Set[Int]] =
+  override def simplicesInDimension(dimension: Int): Iterator[Simplex] =
     metricSpace.elements
       .combinations(dimension + 1)
-      .map(Set.from(_))
+      .map(Simplex.from(_))
       .toSeq
       .sortBy(filtrationValues.applyOrElse(_, _ => Double.PositiveInfinity))
       .iterator

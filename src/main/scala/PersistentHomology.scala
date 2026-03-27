@@ -6,26 +6,26 @@ import scala.collection.Set
 
 object PersistentHomology:
   def persistentHomology[T: Field as field](
-      simplexStream: Iterator[Set[Int]],
-      filtrationValues: PartialFunction[Set[Int], Double]
+      simplexStream: Iterator[Simplex],
+      filtrationValues: PartialFunction[Simplex, Double]
   ): Seq[(Int, Double, Double)] =
     NaivePersistentHomology(simplexStream, filtrationValues)(using field).barcode
 end PersistentHomology
 
-class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int]], filtrationValues: PartialFunction[Set[Int], Double]):
+class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Simplex], filtrationValues: PartialFunction[Simplex, Double]):
   import field._
-  def filtrationValue(simplex: Set[Int]): Double =
+  def filtrationValue(simplex: Simplex): Double =
     filtrationValues.applyOrElse(simplex, _ => Double.PositiveInfinity)
-  def streamOrdering = Ordering.by(filtrationValue).orElseBy(SortedSet.from(_))(Ordering.Implicits.sortedSetOrdering)
+  def streamOrdering : Ordering[Simplex] = Ordering.by(filtrationValue).orElseBy(_.vertices)(Ordering.Implicits.sortedSetOrdering)
   case class State(
-      cycleBasis: Map[Set[Int], Chain[T]],
-      boundaryBasis: Map[Set[Int], Chain[T]],
-      coboundaryLookup: Map[Set[Int], Chain[T]],
-      cycleBirths: Map[Set[Int], Double]
+      cycleBasis: Map[Simplex, Chain[T]],
+      boundaryBasis: Map[Simplex, Chain[T]],
+      coboundaryLookup: Map[Simplex, Chain[T]],
+      cycleBirths: Map[Simplex, Double]
   )
-  var state = State(Map.empty, Map.empty, Map.empty, Map.empty)
-  val barcodes = mutable.ListBuffer.empty[(Int, Double, Double)]
-  def step(simplex: Set[Int]): Unit = if (simplex.size <= 1) {
+  var state : State = State(Map.empty, Map.empty, Map.empty, Map.empty)
+  val barcodes: mutable.ListBuffer[(Int, Double, Double)] = mutable.ListBuffer.empty[(Int, Double, Double)]
+  def step(simplex: Simplex): Unit = if (simplex.dimension <= 0) {
     val birth = filtrationValue(simplex)
     state = state.copy(
       cycleBasis = state.cycleBasis + (simplex -> Chain(
@@ -55,7 +55,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
             cycleBasis = state.cycleBasis + (spx -> cycleModCycles),
             cycleBirths = state.cycleBirths + (spx -> birthTime)
           )
-        case None: Option[(Set[Int], Double)] => state
+        case None: Option[(Simplex, Double)] => state
       }
     } else {
       // since ∂s is not a boundary already, it has to be a cycle
@@ -71,8 +71,8 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
             chain.scaleAdd(chain.field.neg(coeff.asInstanceOf[chain.field.F]), state.coboundaryLookup(spx))
           }
       if (math.abs(filtrationValue(simplex) - state.cycleBirths(dyingCycleLeadingSimplex)) > 1e-15)
-        barcodes.append((dyingCycleLeadingSimplex.size - 1, state.cycleBirths(dyingCycleLeadingSimplex), filtrationValue(simplex)))
-      assert(simplex.size == dyingCycleLeadingSimplex.size + 1)
+        barcodes.append((dyingCycleLeadingSimplex.dimension, state.cycleBirths(dyingCycleLeadingSimplex), filtrationValue(simplex)))
+      assert(simplex.dimension == dyingCycleLeadingSimplex.dimension + 1)
       state = state.copy(
         cycleBasis = state.cycleBasis - dyingCycleLeadingSimplex,
         boundaryBasis = state.boundaryBasis + (boundaryModBoundaries.leading.get._1 -> boundaryModBoundaries),
@@ -85,7 +85,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
     simplexstream.foreach(step)
     state.cycleBirths
       .map { case (simplex, birth) =>
-        ((simplex.size - 1, birth, Double.PositiveInfinity))
+        (simplex.dimension, birth, Double.PositiveInfinity)
       }
       .toSeq
       .concat(barcodes)
