@@ -81,7 +81,7 @@ class VietorisRipsValidation extends AnyFlatSpec with Checkers with Matchers:
 
 class KleinBottleValidation extends AnyFlatSpec with Checkers with Matchers:
   "the Klein bottle" should "have different barcodes" in {
-    val topSimplices : Seq[Simplex] = Seq(
+    val topSimplices: Seq[Simplex] = Seq(
       Simplex(2, 6, 7),
       Simplex(0, 6, 7),
       Simplex(2, 5, 7),
@@ -104,7 +104,7 @@ class KleinBottleValidation extends AnyFlatSpec with Checkers with Matchers:
       .map(Simplex(_))
       .filter(_.dimension >= 0)
       .toSeq
-      .sorted(using Ordering.by((s:Simplex) => s.vertices)(using Ordering.Implicits.sortedSetOrdering))
+      .sorted(using Ordering.by((s: Simplex) => s.vertices)(using Ordering.Implicits.sortedSetOrdering))
       .sortBy(_.dimension)
     println(simplices)
     val filtrationValues: PartialFunction[Simplex, Double] = { case _ => 0.0 }
