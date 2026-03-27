@@ -48,6 +48,8 @@ libraryDependencies ++= Seq(
   "org.scalatestplus" %% "scalacheck-1-17" % s"$scalatestVersion.0" % Test
 )
 
+scalafmtOnCompile := true
+
 // Workaround for XML versioning issues
 // See: https://github.com/scala/bug/issues/12632
 libraryDependencySchemes ++= Seq(
