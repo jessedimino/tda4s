@@ -30,15 +30,8 @@ object Chain:
   def from[T: Field as field](simplex: Simplex)(ordering: Ordering[Simplex]): Chain[T] = Chain(
     SortedMap((simplex, field.one))(using ordering)
   )
-  def boundary[T: Field as field](simplex: Simplex)(ordering: Ordering[Simplex]): Chain[T] = {
-    val vertices = simplex.vertices.toSeq
-    val faces = vertices.map(i => simplex - i)
-    val coefficients = Iterator.iterate(field.one)(field.neg)
-    val faceCoefficientPairs = faces.zip(coefficients).toSeq
-    val entries = SortedMap(faceCoefficientPairs*)(using ordering)
-    Chain(entries)
-  }
-
+  def from[T: Field as field](terms: (Simplex, field.F)*)(using ordering: Ordering[Simplex]): Chain[T] =
+    Chain(using field)(SortedMap.from(terms)(using ordering))
   def reduce[T: Field as outerField](chain: Chain[T], basis: Map[Simplex, Chain[T]]): (Chain[T], Map[Simplex, outerField.F]) =
     import outerField._
     @tailrec

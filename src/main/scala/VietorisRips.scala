@@ -4,8 +4,8 @@ import scala.collection.Set
 
 trait VietorisRips(val metricSpace: MetricSpace[Int]):
   def filtrationValues: PartialFunction[Simplex, Double] = {
-    case spx if spx.vertices.isEmpty   => Double.NegativeInfinity
-    case spx if spx.dimension == 0 => 0.0
+    case spx if spx.vertices.isEmpty => Double.NegativeInfinity
+    case spx if spx.dimension == 0   => 0.0
     case spx =>
       spx.vertices.toSeq.combinations(2).map { case Seq(x, y) => metricSpace.distance(x, y) }.max
   }

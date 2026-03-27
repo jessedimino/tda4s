@@ -16,14 +16,14 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Simplex
   import field._
   def filtrationValue(simplex: Simplex): Double =
     filtrationValues.applyOrElse(simplex, _ => Double.PositiveInfinity)
-  def streamOrdering : Ordering[Simplex] = Ordering.by(filtrationValue).orElseBy(_.vertices)(Ordering.Implicits.sortedSetOrdering)
+  def streamOrdering: Ordering[Simplex] = Ordering.by(filtrationValue).orElseBy(_.vertices)(Ordering.Implicits.sortedSetOrdering)
   case class State(
       cycleBasis: Map[Simplex, Chain[T]],
       boundaryBasis: Map[Simplex, Chain[T]],
       coboundaryLookup: Map[Simplex, Chain[T]],
       cycleBirths: Map[Simplex, Double]
   )
-  var state : State = State(Map.empty, Map.empty, Map.empty, Map.empty)
+  var state: State = State(Map.empty, Map.empty, Map.empty, Map.empty)
   val barcodes: mutable.ListBuffer[(Int, Double, Double)] = mutable.ListBuffer.empty[(Int, Double, Double)]
   def step(simplex: Simplex): Unit = if (simplex.dimension <= 0) {
     val birth = filtrationValue(simplex)
@@ -34,7 +34,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Simplex
       cycleBirths = state.cycleBirths + (simplex -> birth)
     )
   } else {
-    val simplexBoundary: Chain[T] = Chain.boundary(simplex)(streamOrdering)(using field)
+    val simplexBoundary: Chain[T] = simplex.boundary(streamOrdering)(using field)
     val (boundaryModBoundaries, boundaryReductionLog) = Chain.reduce(simplexBoundary, state.boundaryBasis)
     if (boundaryModBoundaries.isZero) {
       // then ∂s is already a boundary, say the boundary of z
