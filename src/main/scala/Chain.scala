@@ -55,9 +55,8 @@ class Chain[T](using val field: Field[T])(val simplexCoefficients: SortedMap[Set
   def leading: Option[(Set[Int], F)] = simplexCoefficients.lastOption
 
 object Chain:
-  /**
-  * Chain object equipped with a from method and boundary maps
-  */
+  //Chain object equipped with a from method and boundary maps
+  
 
   def from[T: Field as field](simplex: Set[Int])(ordering: Ordering[Set[Int]]): Chain[T] = Chain(
     SortedMap((simplex, field.one))(using ordering)
@@ -78,7 +77,7 @@ object Chain:
     /**
     * Chains come equipped with boundary maps that represent k simplexes as chains of (k-1) simplexes, these can be used to form a chain complex
     *
-     @tparam T
+    * @tparam T
     *  type bound for our field, requires us to have an instantiation of F[T]
     *
     * @param simplex
