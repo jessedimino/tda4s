@@ -86,7 +86,7 @@ object Chain:
     *
     * @param ordering
     *  We need a way to define an ordering on simplexes for the persistent homology algorithm to work
-    /*
+    */
     val vertices = simplex.toSeq.sorted
     val faces = vertices.map(i => simplex - i)
     val coefficients = Iterator.iterate(field.one)(field.neg)
