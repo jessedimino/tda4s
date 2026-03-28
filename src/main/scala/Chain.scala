@@ -75,6 +75,18 @@ object Chain:
     *  We need a way to define an ordering on simplexes for the persistent homology algorithm to work
     */
   def boundary[T: Field as field](simplex: Set[Int])(ordering: Ordering[Set[Int]]): Chain[T] = {
+    /**
+    * Chains come equipped with boundary maps that represent k simplexes as chains of (k-1) simplexes, these can be used to form a chain complex
+    *
+     @tparam T
+    *  type bound for our field, requires us to have an instantiation of F[T]
+    *
+    * @param simplex
+    *  We represent our simplexes as Sets of Ints
+    *
+    * @param ordering
+    *  We need a way to define an ordering on simplexes for the persistent homology algorithm to work
+    /*
     val vertices = simplex.toSeq.sorted
     val faces = vertices.map(i => simplex - i)
     val coefficients = Iterator.iterate(field.one)(field.neg)
@@ -99,6 +111,7 @@ object Chain:
               case None => (innerChain, reductionHistory)
               case Some(pivotChain) =>
                 val pivotCoeff: F = pivotChain.simplexCoefficients.getOrElse(simplex, zero).asInstanceOf[F]
+                  //We use a type conversion here since Scala was raising the issue that chains might draw coefficients from different fields
                 val resultCoeff: F = chainCoeff / pivotCoeff
                 reduceBy(
                   innerChain.scaleAdd(-resultCoeff.asInstanceOf[innerChain.field.F], pivotChain),
