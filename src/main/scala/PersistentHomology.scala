@@ -5,9 +5,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.Set
 
 object PersistentHomology:
-  /**
-  * Companion object for the NaivePersistentHomology class
-  */
+  // Companion object for the NaivePersistentHomology class
   def persistentHomology[T: Field as field](
       simplexStream: Iterator[Set[Int]],
       filtrationValues: PartialFunction[Set[Int], Double]
@@ -56,7 +54,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
     */
   def streamOrdering = Ordering.by(filtrationValue).orElseBy(SortedSet.from(_))(Ordering.Implicits.sortedSetOrdering)
     /**
-    * Method to order the simplexes in the simplex stream. Should occur by the filtration values or the defailt set ordering in
+    * Method to order the simplexes in the simplex stream. Should occur by the filtration values or the default set ordering in
     * Scala if the filtration isn't defined.
     */
   case class State(
@@ -65,9 +63,19 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
       coboundaryLookup: Map[Set[Int], Chain[T]],
       cycleBirths: Map[Set[Int], Double]
   )
+    //Homology state is tracked through a case class with lookup tables for the cycle basis, boundary basis, coboundary, and cycle births
   var state = State(Map.empty, Map.empty, Map.empty, Map.empty)
+    //Homology state is null by default
   val barcodes = mutable.ListBuffer.empty[(Int, Double, Double)]
-  def step(simplex: Set[Int]): Unit = if (simplex.size <= 1) {
+    //barcodes are implemented with a mutable (linked) list and each entry is (Dimension, birth, death)
+  def step(simplex: Set[Int]): Unit = 
+    /**
+    * Method to perform a step in the persistent homology computation using a simplex from a stream
+    *
+    * @param simplex
+    *   Current simplex to run the computation 
+    */
+    if (simplex.size <= 1) {
     val birth = filtrationValue(simplex)
     state = state.copy(
       cycleBasis = state.cycleBasis + (simplex -> Chain(
@@ -75,6 +83,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
       )),
       cycleBirths = state.cycleBirths + (simplex -> birth)
     )
+    //Degree 0 simplexes are straightforward for the computation and everything after the next else statement is for higher-dimensional simplexes
   } else {
     val simplexBoundary: Chain[T] = Chain.boundary(simplex)(streamOrdering)(using field)
     val (boundaryModBoundaries, boundaryReductionLog) = Chain.reduce(simplexBoundary, state.boundaryBasis)
@@ -111,6 +120,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
         boundaryReductionLog
           .foldLeft(Chain.from(simplex)(streamOrdering)) { case (chain, (spx, coeff)) =>
             chain.scaleAdd(chain.field.neg(coeff.asInstanceOf[chain.field.F]), state.coboundaryLookup(spx))
+             //We do a type conversion here because Scala was raising issues about the chains potentially having chains drawing coefficients over different fields
           }
       if (math.abs(filtrationValue(simplex) - state.cycleBirths(dyingCycleLeadingSimplex)) > 1e-15)
         barcodes.append((dyingCycleLeadingSimplex.size - 1, state.cycleBirths(dyingCycleLeadingSimplex), filtrationValue(simplex)))
@@ -123,7 +133,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
       )
     }
   }
-  def barcode: Seq[(Int, Double, Double)] = {
+  def barcode: Seq[(Int, Double, Double)] = { //updates the homology state and generates barcode by applying the step function to each simplex in the simplex stream
     simplexstream.foreach(step)
     state.cycleBirths
       .map { case (simplex, birth) =>
