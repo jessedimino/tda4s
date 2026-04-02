@@ -5,6 +5,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.Set
 
 object PersistentHomology:
+  // Companion object for the NaivePersistentHomology class
   def persistentHomology[T: Field as field](
       simplexStream: Iterator[Simplex],
       filtrationValues: PartialFunction[Simplex, Double]
@@ -13,19 +14,55 @@ object PersistentHomology:
 end PersistentHomology
 
 class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Simplex], filtrationValues: PartialFunction[Simplex, Double]):
+  /**
+  * Class to run the persistent homology algorithm. It is naive in the sense that it is a textbook implementation with no
+  * optimizations applied to it. It utilizes a form of row reduction to find the pivots of the boundary matrix,
+  * which correspond to cycles in the underlying topology. 
+  *
+  * @tparam Field[T]
+  *  type parameter for the field, requires we have an instantiation of F[T]
+  *
+  * @param simplexStream
+  *  iterable object of simplexes 
+  *
+  * @param filtrationValues
+  *  partial function that takes a simplex as an input and returns the filtration value as a double
+  *
+  */
   import field._
   def filtrationValue(simplex: Simplex): Double =
+    /**
+    * Method for the filtration value of a simplex. Returns either the filtation value specified in filtrationValues or infinity
+    * if it is not defined
+    *
+    * @param simplex
+    *   The simplex used to compute the filtration value
+    */
     filtrationValues.applyOrElse(simplex, _ => Double.PositiveInfinity)
   def streamOrdering: Ordering[Simplex] = Ordering.by(filtrationValue).orElseBy(_.vertices)(Ordering.Implicits.sortedSetOrdering)
+    /**
+    * Method to order the simplexes in the simplex stream. Should occur by the filtration values or the default set ordering in
+    * Scala if the filtration isn't defined.
+    */
   case class State(
       cycleBasis: Map[Simplex, Chain[T]],
       boundaryBasis: Map[Simplex, Chain[T]],
       coboundaryLookup: Map[Simplex, Chain[T]],
       cycleBirths: Map[Simplex, Double]
   )
+     //Homology state is tracked through a case class with lookup tables for the cycle basis, boundary basis, coboundary, and cycle births
   var state: State = State(Map.empty, Map.empty, Map.empty, Map.empty)
+    //Homology state is null by default
   val barcodes: mutable.ListBuffer[(Int, Double, Double)] = mutable.ListBuffer.empty[(Int, Double, Double)]
-  def step(simplex: Simplex): Unit = if (simplex.dimension <= 0) {
+    //barcodes are implemented with a mutable (linked) list and each entry is (Dimension, birth, death)
+  def step(simplex: Simplex): Unit = 
+    /**
+    * Method to perform a step in the persistent homology computation using a simplex from a stream
+    *
+    * @param simplex
+    *   Current simplex to run the computation 
+    */
+    if (simplex.dimension <= 0) {
     val birth = filtrationValue(simplex)
     state = state.copy(
       cycleBasis = state.cycleBasis + (simplex -> Chain(
@@ -33,6 +70,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Simplex
       )),
       cycleBirths = state.cycleBirths + (simplex -> birth)
     )
+      //Degree 0 simplexes are straightforward for the computation and everything after the next else statement is for higher-dimensional simplexes
   } else {
     val simplexBoundary: Chain[T] = simplex.boundary(streamOrdering)(using field)
     val (boundaryModBoundaries, boundaryReductionLog) = Chain.reduce(simplexBoundary, state.boundaryBasis)
@@ -81,7 +119,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Simplex
       )
     }
   }
-  def barcode: Seq[(Int, Double, Double)] = {
+  def barcode: Seq[(Int, Double, Double)] = { 
     simplexstream.foreach(step)
     state.cycleBirths
       .map { case (simplex, birth) =>
@@ -90,4 +128,6 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Simplex
       .toSeq
       .concat(barcodes)
   }
+    //updates the homology state and generates barcode by applying the step function
+    //to each simplex in the simplex stream
 end NaivePersistentHomology
