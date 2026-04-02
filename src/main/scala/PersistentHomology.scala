@@ -14,7 +14,7 @@ object PersistentHomology:
     /**
     * method to run the persistent homology algorithm defined in the NaivePersistentHomology class
     *
-    * @tparam T
+    * @tparam Field[T]
     *  type parameter for the field, requires we have an instantiation of F[T]
     *
     * @param simplexStream
@@ -31,7 +31,7 @@ class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int
   * optimizations applied to it. It utilizes a form of row reduction to find the pivots of the boundary matrix,
   * which correspond to cycles in the underlying topology. 
   *
-  * @tparam T
+  * @tparam Field[T]
   *  type parameter for the field, requires we have an instantiation of F[T]
   *
   * @param simplexStream
