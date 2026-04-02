@@ -16,7 +16,7 @@ class Chain[T](using val field: Field[T])(val simplexCoefficients: SortedMap[Set
   * 
   * @param simplexCoefficients
   *  Chains are implemented as conversions of a SortedMap from 
-  *  the simplexto the corresponding coefficient. Sorting should occur by filtration value in the simplex stream.
+  *  the simplex to the corresponding coefficient. Sorting should occur by filtration value in the simplex stream.
   *
   */
   import field.*
@@ -55,7 +55,8 @@ class Chain[T](using val field: Field[T])(val simplexCoefficients: SortedMap[Set
   def leading: Option[(Set[Int], F)] = simplexCoefficients.lastOption
 
 object Chain:
-  //Chain object equipped with a from method and boundary maps
+  //Companion object for the Chain Class. 
+  //We utilize it to create a class factory, particularly to construct chains from simplexes.
   
 
   def from[T: Field as field](simplex: Set[Int])(ordering: Ordering[Set[Int]]): Chain[T] = Chain(
@@ -64,7 +65,7 @@ object Chain:
     /**
     * The from method allows for the construction of the Chain object from the components
     * 
-    * @tparam T
+    * @tparam Field[T]
     *  type bound for our field, requires us to have an instantiation of F[T]
     * 
     * @param simplex
@@ -77,14 +78,14 @@ object Chain:
     /**
     * Chains come equipped with boundary maps that represent k simplexes as chains of (k-1) simplexes, these can be used to form a chain complex
     *
-    * @tparam T
+    * @tparam Field[T]
     *  type bound for our field, requires us to have an instantiation of F[T]
     *
     * @param simplex
     *  We represent our simplexes as Sets of Ints
     *
     * @param ordering
-    *  We need a way to define an ordering on simplexes for the persistent homology algorithm to work
+    *  We need a way to define an ordering on simplexes for the sorted maps that store chains
     */
     val vertices = simplex.toSeq.sorted
     val faces = vertices.map(i => simplex - i)
