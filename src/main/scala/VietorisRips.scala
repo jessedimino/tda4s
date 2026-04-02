@@ -4,7 +4,8 @@ import scala.collection.Set
 
 trait VietorisRips(val metricSpace: MetricSpace[Int]):
   /**
-  * Vietoris Rips trait for defining filtration values
+  * Vietoris Rips trait that work as an interface for generate Vietoris Rips simplex streams from classes that inherit it.
+  * It provides a default implementation for Vietoris-Rips filtration values
   *
   * @param metricSpace
   *   metric space where the underlying metric is used to compute distances between points for the filtration values
