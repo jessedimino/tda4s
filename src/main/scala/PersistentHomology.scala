@@ -4,77 +4,79 @@ import collection.mutable
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.Set
 
+// Companion object for the NaivePersistentHomology class
 object PersistentHomology:
-  // Companion object for the NaivePersistentHomology class
+  /**
+   * method to run the persistent homology algorithm defined in the NaivePersistentHomology class
+   *
+   * @tparam Field [T]
+   *               type parameter for the field, requires we have an instantiation of Field[T]
+   * @param simplexStream
+   * iterable object of simplexes 
+   * @param filtrationValues
+   * partial function that takes a simplex as an input and returns the filtration value as a double
+   */
   def persistentHomology[T: Field as field](
       simplexStream: Iterator[Set[Int]],
       filtrationValues: PartialFunction[Set[Int], Double]
   ): Seq[(Int, Double, Double)] =
     NaivePersistentHomology(simplexStream, filtrationValues)(using field).barcode
-    /**
-    * method to run the persistent homology algorithm defined in the NaivePersistentHomology class
-    *
-    * @tparam Field[T]
-    *  type parameter for the field, requires we have an instantiation of F[T]
-    *
-    * @param simplexStream
-    *  iterable object of simplexes 
-    *
-    * @param filtrationValues
-    *  partial function that takes a simplex as an input and returns the filtration value as a double
-    */
 end PersistentHomology
 
+/**
+ * Class to run the persistent homology algorithm. It is naive in the sense that it is a textbook implementation with no
+ * optimizations applied to it. It utilizes a form of row reduction to find the pivots of the boundary matrix,
+ * which correspond to cycles in the underlying topology. 
+ *
+ * @tparam Field[T]
+ *  type parameter for the field, requires we have an instantiation of Field[T]
+ *
+ * @param simplexStream
+ *  iterable object of simplexes 
+ *
+ * @param filtrationValues
+ *  partial function that takes a simplex as an input and returns the filtration value as a double
+ *
+ */
 class NaivePersistentHomology[T: Field as field](simplexstream: Iterator[Set[Int]], filtrationValues: PartialFunction[Set[Int], Double]):
-  /**
-  * Class to run the persistent homology algorithm. It is naive in the sense that it is a textbook implementation with no
-  * optimizations applied to it. It utilizes a form of row reduction to find the pivots of the boundary matrix,
-  * which correspond to cycles in the underlying topology. 
-  *
-  * @tparam Field[T]
-  *  type parameter for the field, requires we have an instantiation of F[T]
-  *
-  * @param simplexStream
-  *  iterable object of simplexes 
-  *
-  * @param filtrationValues
-  *  partial function that takes a simplex as an input and returns the filtration value as a double
-  *
-  */
-
   import field._
+
+  /**
+   * Method for the filtration value of a simplex. Returns either the filtation value specified in filtrationValues or infinity
+   * if it is not defined
+   *
+   * @param simplex
+   * The simplex used to compute the filtration value
+   */
   def filtrationValue(simplex: Set[Int]): Double =
     filtrationValues.applyOrElse(simplex, _ => Double.PositiveInfinity)
-    /**
-    * Method for the filtration value of a simplex. Returns either the filtation value specified in filtrationValues or infinity
-    * if it is not defined
-    *
-    * @param simplex
-    *   The simplex used to compute the filtration value
-    */
+
+  /**
+   * Method to order the simplexes in the simplex stream. Should occur by the filtration values or the default set ordering in
+   * Scala if the filtration isn't defined.
+   */
   def streamOrdering = Ordering.by(filtrationValue).orElseBy(SortedSet.from(_))(Ordering.Implicits.sortedSetOrdering)
-    /**
-    * Method to order the simplexes in the simplex stream. Should occur by the filtration values or the default set ordering in
-    * Scala if the filtration isn't defined.
-    */
+
+  //Homology state is tracked through a case class with lookup tables for the cycle basis, boundary basis, coboundary, and cycle births
   case class State(
       cycleBasis: Map[Set[Int], Chain[T]],
       boundaryBasis: Map[Set[Int], Chain[T]],
       coboundaryLookup: Map[Set[Int], Chain[T]],
       cycleBirths: Map[Set[Int], Double]
   )
-    //Homology state is tracked through a case class with lookup tables for the cycle basis, boundary basis, coboundary, and cycle births
+
+  //Homology state is null by default
   var state = State(Map.empty, Map.empty, Map.empty, Map.empty)
-    //Homology state is null by default
+  //barcodes are implemented with a mutable (linked) list and each entry is (Dimension, birth, death)
   val barcodes = mutable.ListBuffer.empty[(Int, Double, Double)]
-    //barcodes are implemented with a mutable (linked) list and each entry is (Dimension, birth, death)
+
+  /**
+   * Method to perform a step in the persistent homology computation using a simplex from a stream
+   *
+   * @param simplex
+   * Current simplex to run the computation 
+   */
   def step(simplex: Set[Int]): Unit = 
-    /**
-    * Method to perform a step in the persistent homology computation using a simplex from a stream
-    *
-    * @param simplex
-    *   Current simplex to run the computation 
-    */
     if (simplex.size <= 1) {
     val birth = filtrationValue(simplex)
     state = state.copy(
